@@ -8,7 +8,7 @@ public class CodeProjetHelper
     {
         CodeProjets = new();
 
-        //Create data file in not found
+        //Create data file if not found
         if (!File.Exists(Statics.DataFile))
         {
             File.Create(Statics.DataFile).Close();
@@ -21,7 +21,11 @@ public class CodeProjetHelper
         foreach (var line in lines)
         {
             var lineSplitted = line.Split('\t');
-            var codeProjet = new CodeProjet(lineSplitted[0], Convert.ToInt32(lineSplitted[1]), true);
+
+            var chronoText = lineSplitted[1];
+            var parsed = int.TryParse(chronoText, out var chrono);
+
+            var codeProjet = new CodeProjet(lineSplitted[0], parsed ? chrono : null, chronoText, true);
             CodeProjets.Add(codeProjet);
         }
     }
@@ -34,7 +38,11 @@ public class CodeProjetHelper
     public async Task SaveAsync()
     {
         var lines = CodeProjets.Where(codeProjet => !codeProjet.Saved)
-            .Select(codeProjet => $"{codeProjet.Radical}\t{codeProjet.Chrono}");
+            .Select(codeProjet =>
+            {
+                var corono = codeProjet.Chrono.HasValue ? codeProjet.Chrono.ToString() : codeProjet.ChronoText;
+                return $"{codeProjet.Radical}\t{corono}";
+            });
         await File.AppendAllLinesAsync(Statics.DataFile, lines);
     }
 
@@ -58,7 +66,7 @@ public class CodeProjetHelper
     public CodeProjet AddAsync(string radical)
     {
         var chrono = FindNextChrono(radical);
-        var codeProjet = new CodeProjet(radical, chrono, false);
+        var codeProjet = new CodeProjet(radical, chrono, chrono.ToString(), false);
         CodeProjets.Add(codeProjet);
         return codeProjet;
     }
